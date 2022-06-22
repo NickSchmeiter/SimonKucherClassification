@@ -3,7 +3,8 @@ from sklearn.ensemble import RandomForestClassifier
 
 
 from sklearn.ensemble import RandomForestRegressor
-from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split, GridSearchCV
 import numpy as np
 from matplotlib import pyplot as plt
 import seaborn as sns
@@ -36,23 +37,28 @@ X = db_pr[['customer_lv_1', 'region_desc', 'canal_group', 'sku', 'mechanism_deta
            'Discount', 'discount_so']]  # Features
 
 y = db_pr['class']  # Labels
-print(y)
 # One hot encode
 X_oneh = pd.get_dummies(X)
 
 # train-test-split
-X_train, X_test, y_train, y_test = train_test_split(X_oneh, y, test_size=0.7, random_state=42)
+X_train, X_test, y_train, y_test = train_test_split(X_oneh, y, test_size=0.8, random_state=42)
 
-print('Training Features Shape:', X_train.shape)
-print('Training Labels Shape:', y_train.shape)
-print('Testing Features Shape:', X_test.shape)
-print('Testing Labels Shape:', y_test.shape)
 
-# Random Forest
-random_forest = RandomForestRegressor()
-random_forest.fit(X_train, y_train)
-predicted = random_forest.predict(X_test)
+#Grid Building
+grid_param = {
+    'fit_intercept': [True, False],
+    'copy_X': [True, False],
+    'normalize': [True, False],
+    'positive': [True, False]
+}
+#Grid Search!!!
+gd_sr = GridSearchCV(estimator=LinearRegression(),
+                     param_grid=grid_param,
+                     cv=5,
+                     n_jobs=-1)
+gd_sr.fit(X_train, y_train)
 
 # accuracy_score
-accuracy = random_forest.score(X_test, y_test)
-print(accuracy)
+print('Best parameters: {}'.format(gd_sr.best_params_))
+print('Best cross-validation score: {:.2f}'.format(gd_sr.best_score_))
+print('Final Test Score with new data: {:.2f}'.format(gd_sr.score(X_test,y_test)))
